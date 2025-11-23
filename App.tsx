@@ -119,7 +119,6 @@ const App: React.FC = () => {
 
   // Trip Summary State (Manual Input)
   const [tripHeader, setTripHeader] = useState("我的旅行");
-  const [tripLocation, setTripLocation] = useState("Tokyo, Japan");
   const [tripDateStr, setTripDateStr] = useState("2025/06");
   
   const [isEditingHeader, setIsEditingHeader] = useState(false);
@@ -153,7 +152,7 @@ const App: React.FC = () => {
   // Build context string for AI assistant
   const getAiContext = () => {
     return `
-      Trip: ${tripHeader} to ${tripLocation} (${tripDateStr}).
+      Trip: ${tripHeader} (${tripDateStr}).
       Accommodation: ${hotel.name} at ${hotel.address}.
       Flights: ${flights.map(f => `${f.type}: ${f.flightNumber} (${f.date})`).join(', ')}.
       Companions: ${companions.map(c => c.name).join(', ')}.
@@ -168,7 +167,7 @@ const App: React.FC = () => {
       {/* Header - Fixed at top with Manual Edit Mode */}
       <header className="flex-none bg-white/90 pt-10 pb-4 px-6 z-10 backdrop-blur-md border-b border-gray-50">
         <h1 className="text-3xl font-black text-gray-800 tracking-tighter">
-          Travel<span className="text-[#ffb7b2]">Buddy</span>
+          旅遊<span className="text-[#ffb7b2]">筆記本</span>
         </h1>
         
         {isEditingHeader ? (
@@ -192,16 +191,6 @@ const App: React.FC = () => {
                    className="w-full text-sm font-bold bg-white border border-gray-200 rounded px-2 py-1"
                  />
                </div>
-            </div>
-            <div>
-               <label className="text-[10px] font-bold text-gray-400 uppercase">地點 (用於天氣)</label>
-               <input 
-                 type="text" 
-                 value={tripLocation} 
-                 onChange={(e) => setTripLocation(e.target.value)}
-                 placeholder="例如: Tokyo, Japan"
-                 className="w-full text-sm font-bold bg-white border border-gray-200 rounded px-2 py-1"
-               />
             </div>
             <button 
               onClick={() => setIsEditingHeader(false)}
@@ -253,7 +242,6 @@ const App: React.FC = () => {
           <div className="p-4">
             <WeatherForecast 
               flights={flights}
-              location={tripLocation}
             />
           </div>
         )}

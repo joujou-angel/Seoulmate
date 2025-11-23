@@ -3,15 +3,18 @@ import { getWeatherAdvice } from '../services/geminiService';
 import { FlightInfo, DailyWeather } from '../types';
 
 interface WeatherForecastProps {
-  location: string;
   flights: FlightInfo[];
 }
 
-const WeatherForecast: React.FC<WeatherForecastProps> = ({ location, flights }) => {
+const WeatherForecast: React.FC<WeatherForecastProps> = ({ flights }) => {
+  // Location State (Local)
+  const [location, setLocation] = useState('Tokyo, Japan');
+  
   const [info, setInfo] = useState<{ daily: DailyWeather[], advice: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Debounce logic for fetching weather
     const fetchWeather = async () => {
       if (!location || flights.length === 0) return;
       
@@ -28,14 +31,18 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ location, flights }) 
       setLoading(false);
     };
 
-    fetchWeather();
+    const timer = setTimeout(() => {
+      fetchWeather();
+    }, 1000); // Debounce delay
+
+    return () => clearTimeout(timer);
   }, [location, flights]);
 
-  if (!location || flights.length === 0) {
+  if (flights.length === 0) {
     return (
        <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
          <svg className="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
-         <p>請先設定航班資訊與地點，</p>
+         <p>請先設定航班資訊，</p>
          <p>讓 AI 為你查詢旅程天氣！</p>
        </div>
     );
@@ -50,7 +57,13 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ location, flights }) 
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 <span className="text-xs font-bold uppercase tracking-wider">Destination</span>
              </div>
-             <h2 className="text-3xl font-black text-yellow-800">{location}</h2>
+             <input 
+               type="text" 
+               value={location}
+               onChange={(e) => setLocation(e.target.value)}
+               className="w-full bg-transparent border-b border-yellow-600/20 text-3xl font-black text-yellow-800 focus:outline-none focus:border-yellow-600 placeholder-yellow-800/30"
+               placeholder="Enter location..."
+             />
           </div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-300 rounded-full mix-blend-multiply filter blur-2xl opacity-50 transform translate-x-10 -translate-y-10"></div>
        </div>
