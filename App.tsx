@@ -72,18 +72,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-[#fcfcfc] font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden text-gray-800">
       
-      {/* Header */}
-      <header className="bg-white pt-10 pb-4 px-6 sticky top-0 z-10 border-b border-gray-100">
-        <h1 className="text-2xl font-black text-gray-800 tracking-tight">
-          Travel<span className="text-blue-500">Buddy</span>
+      {/* Header - Transparent/Glassmorphism */}
+      <header className="bg-white/80 pt-10 pb-4 px-6 sticky top-0 z-10 backdrop-blur-md">
+        <h1 className="text-3xl font-black text-gray-800 tracking-tighter">
+          Travel<span className="text-[#ffb7b2]">Buddy</span>
         </h1>
-        <p className="text-gray-400 text-xs mt-1 font-medium">日本東京之旅 (2025/06)</p>
+        <p className="text-gray-400 text-xs mt-1 font-bold tracking-widest uppercase">日本東京之旅 (2025/06)</p>
       </header>
 
       {/* Main Content Area */}
-      <main className="p-4 pb-28">
+      <main className="p-4 pb-36">
         {activeTab === AppTab.TRIP && (
           <TripInfo 
             flight={flight}
@@ -109,30 +109,51 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="absolute bottom-6 left-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-2 flex justify-between items-center z-20">
+      {/* Bottom Navigation - Macaroon Theme */}
+      <nav className="absolute bottom-6 left-4 right-4 bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 p-2 flex justify-between items-center z-20">
+        
+        {/* Trip Tab - Map Icon - Peach */}
         <button 
           onClick={() => setActiveTab(AppTab.TRIP)}
-          className={`flex-1 flex flex-col items-center py-3 rounded-xl transition-all ${activeTab === AppTab.TRIP ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex-1 flex flex-col items-center py-4 px-2 rounded-3xl transition-all duration-300 ${
+            activeTab === AppTab.TRIP 
+              ? 'bg-[#FFDAC1] text-[#8a6a54] shadow-sm transform -translate-y-1' 
+              : 'text-gray-300 hover:text-gray-400'
+          }`}
         >
-          <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-          <span className="text-xs font-bold">行程資訊</span>
+          {/* Map Icon resembling folded map with path */}
+          <svg className="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3l3 3m-3-6a9 9 0 110 18 9 9 0 010-18z" className="hidden" /> {/* Hiding clock for map */}
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeDasharray="2 2" />
+          </svg>
+          <span className="text-[10px] font-black tracking-wider">行程</span>
         </button>
         
+        {/* Expense Tab - Mint */}
         <button 
           onClick={() => setActiveTab(AppTab.EXPENSES)}
-          className={`flex-1 flex flex-col items-center py-3 rounded-xl transition-all ${activeTab === AppTab.EXPENSES ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex-1 flex flex-col items-center py-4 px-2 rounded-3xl transition-all duration-300 ${
+            activeTab === AppTab.EXPENSES 
+              ? 'bg-[#B5EAD7] text-[#4a7c72] shadow-sm transform -translate-y-1' 
+              : 'text-gray-300 hover:text-gray-400'
+          }`}
         >
-          <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span className="text-xs font-bold">記帳分攤</span>
+          <svg className="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span className="text-[10px] font-black tracking-wider">記帳</span>
         </button>
 
+        {/* Assistant Tab - Lavender */}
         <button 
           onClick={() => setActiveTab(AppTab.ASSISTANT)}
-          className={`flex-1 flex flex-col items-center py-3 rounded-xl transition-all ${activeTab === AppTab.ASSISTANT ? 'bg-purple-100 text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
+          className={`flex-1 flex flex-col items-center py-4 px-2 rounded-3xl transition-all duration-300 ${
+            activeTab === AppTab.ASSISTANT 
+              ? 'bg-[#E2DBF5] text-[#6a5a9e] shadow-sm transform -translate-y-1' 
+              : 'text-gray-300 hover:text-gray-400'
+          }`}
         >
-           <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-           <span className="text-xs font-bold">AI 助手</span>
+           <svg className="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+           <span className="text-[10px] font-black tracking-wider">助手</span>
         </button>
       </nav>
     </div>

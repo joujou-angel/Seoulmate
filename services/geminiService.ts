@@ -66,3 +66,30 @@ export const askTravelAssistant = async (query: string, context: string): Promis
     return "連線錯誤。";
   }
 };
+
+export const getExchangeRate = async (from: string, to: string): Promise<number | null> => {
+  const ai = getAiClient();
+  if (!ai) return null;
+
+  try {
+    // Only fetch if valid currencies
+    if (!from || !to || from.length < 3 || to.length < 3) return null;
+
+    const prompt = `
+      What is the current estimated exchange rate from ${from} to ${to}? 
+      Only return the number (e.g., 0.21 or 145.5). Do not write any text.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    const text = response.text?.trim();
+    const rate = parseFloat(text?.replace(/[^0-9.]/g, '') || '');
+    return isNaN(rate) ? null : rate;
+  } catch (error) {
+    console.error("Gemini Currency Error:", error);
+    return null;
+  }
+};
