@@ -69,6 +69,27 @@ export const getTripTitle = async (flights: FlightInfo[]): Promise<{ title: stri
   }
 };
 
+// --- Geocoding ---
+export const getCoordinates = async (location: string): Promise<{ lat: number, lng: number } | null> => {
+  if (!location) return null;
+  try {
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=zh&format=json`;
+    const geoRes = await fetch(geoUrl);
+    const geoData = await geoRes.json();
+
+    if (geoData.results && geoData.results.length > 0) {
+      return {
+        lat: geoData.results[0].latitude,
+        lng: geoData.results[0].longitude
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Geocoding Error:", error);
+    return null;
+  }
+};
+
 // --- Weather ---
 
 export const getWeatherAdvice = async (location: string, startDate: string, endDate: string): Promise<{ daily: DailyWeather[], advice: string } | null> => {
@@ -97,6 +118,31 @@ export const getWeatherAdvice = async (location: string, startDate: string, endD
   } catch (error) {
     console.error("Weather Error:", error);
     return null;
+  }
+};
+
+export const generateClothingAdvice = async (location: string, weatherSummary: string): Promise<string> => {
+  const ai = getAiClient();
+  if (!ai) return "無法連線至 AI 助理。";
+
+  try {
+    const prompt = `
+      Based on the following REAL weather forecast for ${location}:
+      ${weatherSummary}
+      
+      Provide a short, cute, and helpful clothing advice in Traditional Chinese (繁體中文).
+      Max 50 words. Focus on what to wear (e.g. layers, umbrella, coat).
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    return response.text?.trim() || "目前無法提供穿衣建議。";
+  } catch (error) {
+    console.error("Advice Error:", error);
+    return "連線錯誤，無法提供建議。";
   }
 };
 

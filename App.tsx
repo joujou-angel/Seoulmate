@@ -245,8 +245,7 @@ const App: React.FC = () => {
           <Itinerary 
             items={itineraryItems}
             onUpdateItems={setItineraryItems}
-            tripName={tripHeader} 
-            tripYear={tripDateStr.split('/')[0] || '2025'}
+            flights={flights}
           />
         )}
         
