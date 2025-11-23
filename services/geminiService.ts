@@ -10,6 +10,12 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// Helper to clean JSON string (removes markdown code blocks)
+const cleanJsonString = (text: string | undefined): string => {
+  if (!text) return "null";
+  return text.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
 // --- Trip Analysis ---
 
 export const predictFlightDetails = async (flightNumber: string): Promise<{ origin: string, destination: string } | null> => {
@@ -29,7 +35,7 @@ export const predictFlightDetails = async (flightNumber: string): Promise<{ orig
       config: { responseMimeType: 'application/json' }
     });
 
-    return JSON.parse(response.text || "null");
+    return JSON.parse(cleanJsonString(response.text));
   } catch (error) {
     console.error("Flight Prediction Error:", error);
     return null;
@@ -57,7 +63,7 @@ export const getTripTitle = async (flights: FlightInfo[]): Promise<{ title: stri
       config: { responseMimeType: 'application/json' }
     });
 
-    return JSON.parse(response.text || "null");
+    return JSON.parse(cleanJsonString(response.text));
   } catch (error) {
     return null;
   }
@@ -87,7 +93,7 @@ export const getWeatherAdvice = async (location: string, startDate: string, endD
       config: { responseMimeType: 'application/json' }
     });
 
-    return JSON.parse(response.text || "null");
+    return JSON.parse(cleanJsonString(response.text));
   } catch (error) {
     console.error("Weather Error:", error);
     return null;

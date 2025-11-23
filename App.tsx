@@ -115,6 +115,7 @@ const App: React.FC = () => {
   const [hotel, setHotel] = useState<HotelInfo>(INITIAL_HOTEL);
   const [companions, setCompanions] = useState<Companion[]>(INITIAL_COMPANIONS);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [itineraryItems, setItineraryItems] = useState<ItineraryItem[]>(INITIAL_ITINERARY);
 
   // Trip Summary State (Manual Input)
   const [tripHeader, setTripHeader] = useState("我的旅行");
@@ -157,6 +158,7 @@ const App: React.FC = () => {
       Flights: ${flights.map(f => `${f.type}: ${f.flightNumber} (${f.date})`).join(', ')}.
       Companions: ${companions.map(c => c.name).join(', ')}.
       Total Expenses so far: ${expenses.reduce((s,e) => s + e.amount, 0)}.
+      Itinerary items: ${itineraryItems.length}.
     `;
   };
 
@@ -241,7 +243,8 @@ const App: React.FC = () => {
 
         {activeTab === AppTab.ITINERARY && (
           <Itinerary 
-            items={INITIAL_ITINERARY} 
+            items={itineraryItems}
+            onUpdateItems={setItineraryItems}
             tripName={tripHeader} 
             tripYear={tripDateStr.split('/')[0] || '2025'}
           />
