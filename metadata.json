@@ -1,0 +1,5 @@
+{
+  "name": "Seoulmate",
+  "description": "A comprehensive travel companion app managing flight details, hotel info for drivers, and a shared expense tracker with smart settlement.",
+  "requestFramePermissions": []
+}
