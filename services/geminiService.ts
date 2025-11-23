@@ -10,10 +10,26 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-// Helper to clean JSON string (removes markdown code blocks)
+// Helper to clean JSON string (removes markdown code blocks and finds JSON object)
 const cleanJsonString = (text: string | undefined): string => {
-  if (!text) return "null";
-  return text.replace(/```json/g, '').replace(/```/g, '').trim();
+  if (!text) return "{}";
+  let cleaned = text;
+  
+  // Try to extract JSON from markdown block first
+  const markdownMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (markdownMatch) {
+    cleaned = markdownMatch[1];
+  }
+
+  // Locate the first '{' and last '}' to isolate the JSON object
+  const firstOpen = cleaned.indexOf('{');
+  const lastClose = cleaned.lastIndexOf('}');
+  
+  if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+    cleaned = cleaned.substring(firstOpen, lastClose + 1);
+  }
+  
+  return cleaned;
 };
 
 // --- Trip Analysis ---
