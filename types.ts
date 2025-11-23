@@ -8,6 +8,7 @@ export interface FlightInfo {
   id: string;
   type: 'departure' | 'return' | 'other';
   flightNumber: string;
+  bookingRef?: string; // New: Booking Reference (訂位代碼)
   origin?: string;      // e.g. TPE
   destination?: string; // e.g. NRT
   departureTime: string;
@@ -19,6 +20,8 @@ export interface FlightInfo {
 export interface HotelInfo {
   name: string;
   address: string;
+  originalAddress?: string; // New: Address in local language
+  phone?: string;           // New: Phone number
   checkIn: string;
   checkOut: string;
   bookingRef: string;
@@ -34,8 +37,26 @@ export interface Expense {
   category: 'food' | 'transport' | 'stay' | 'shopping' | 'other';
 }
 
+export interface DailyWeather {
+  date: string;
+  weather: string;
+  temp: string;
+}
+
+export interface ItineraryItem {
+  id: string;
+  date: string; // YYYY/MM/DD
+  time: string; // HH:MM
+  title: string;
+  category: 'flight' | 'transport' | 'food' | 'sightseeing' | 'stay' | 'other';
+  description?: string;
+  isReserved?: boolean;
+  location?: string;
+}
+
 export enum AppTab {
-  TRIP = 'TRIP',
+  INFO = 'INFO',       // Renamed from TRIP
+  ITINERARY = 'ITINERARY', // New Tab
   EXPENSES = 'EXPENSES',
   WEATHER = 'WEATHER',
   ASSISTANT = 'ASSISTANT'

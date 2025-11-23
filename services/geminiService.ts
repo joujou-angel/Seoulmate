@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { HotelInfo, FlightInfo } from "../types";
+import { HotelInfo, FlightInfo, DailyWeather } from "../types";
 
 const getAiClient = () => {
   const apiKey = process.env.API_KEY;
@@ -65,19 +65,20 @@ export const getTripTitle = async (flights: FlightInfo[]): Promise<{ title: stri
 
 // --- Weather ---
 
-export const getWeatherAdvice = async (location: string, dates: string): Promise<{ temp: string, advice: string } | null> => {
+export const getWeatherAdvice = async (location: string, startDate: string, endDate: string): Promise<{ daily: DailyWeather[], advice: string } | null> => {
   const ai = getAiClient();
   if (!ai || !location) return null;
 
   try {
     const prompt = `
-      Predict the weather for: ${location} during: ${dates}.
+      Predict the weather for: ${location} from ${startDate} to ${endDate}.
       
-      Return a JSON object:
-      {
-        "temp": "Average temperature range (e.g., 20°C - 25°C)",
-        "advice": "Short, cute clothing advice (max 30 words). E.g., 'Bring a light jacket for evenings!'"
-      }
+      Return a JSON object with:
+      1. "daily": an array of objects for EACH day between the dates (inclusive), containing:
+         - "date": "MM/DD"
+         - "weather": "Emoji + Short Description (e.g. ☀️ Sunny)"
+         - "temp": "High/Low (e.g. 25°C / 18°C)"
+      2. "advice": "Clothing advice in Traditional Chinese (繁體中文). Be cute and helpful."
     `;
 
     const response = await ai.models.generateContent({

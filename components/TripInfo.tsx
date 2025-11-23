@@ -82,6 +82,7 @@ const TripInfo: React.FC<TripInfoProps> = ({
       id: newId,
       type: flights.length === 0 ? 'departure' : 'other', 
       flightNumber: '',
+      bookingRef: '',
       origin: '',
       destination: '',
       departureTime: '00:00',
@@ -104,7 +105,7 @@ const TripInfo: React.FC<TripInfoProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       {/* Flight Section - Pastel Blue */}
       <div className="bg-white rounded-3xl shadow-sm border border-[#A0C4FF]/30 overflow-hidden">
         <div className="bg-[#A0C4FF] px-6 py-4 flex justify-between items-center">
@@ -169,7 +170,17 @@ const TripInfo: React.FC<TripInfoProps> = ({
                           className="w-full p-2 rounded-lg border border-gray-200 text-sm"
                         />
                       </div>
-                      <div className="w-1/3">
+                      <div className="flex-1">
+                         <label className="text-xs font-bold text-gray-400">訂位代碼</label>
+                         <input 
+                          type="text"
+                          placeholder="PNR"
+                          value={tempFlight.bookingRef || ''}
+                          onChange={e => setTempFlight({...tempFlight, bookingRef: e.target.value.toUpperCase()})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        />
+                      </div>
+                      <div className="w-1/4">
                          <label className="text-xs font-bold text-gray-400">航廈</label>
                          <input 
                           type="text"
@@ -228,7 +239,7 @@ const TripInfo: React.FC<TripInfoProps> = ({
                       </div>
                    </div>
                    <div className="flex gap-2 pt-2">
-                     <button onClick={saveFlight} className="flex-1 bg-[#A0C4FF] text-white py-2 rounded-xl text-sm font-bold">儲存 (AI 自動補全)</button>
+                     <button onClick={saveFlight} className="flex-1 bg-[#A0C4FF] text-white py-2 rounded-xl text-sm font-bold">儲存</button>
                      <button onClick={() => {
                          if(!flight.flightNumber && flight.departureTime === '00:00') {
                            deleteFlight(flight.id); 
@@ -271,6 +282,9 @@ const TripInfo: React.FC<TripInfoProps> = ({
                     )}
                   </div>
                   <div className="text-right">
+                     {flight.bookingRef && (
+                       <span className="block text-xs font-bold text-[#8bb4f7] mb-1 bg-blue-50 px-2 py-1 rounded">訂位代碼: {flight.bookingRef}</span>
+                     )}
                      <span className="text-xs text-gray-400 font-bold bg-gray-100 px-2 py-1 rounded-lg">航廈 {flight.terminal}</span>
                   </div>
                   <div className="col-span-2 flex justify-between items-center mt-1">
@@ -322,7 +336,7 @@ const TripInfo: React.FC<TripInfoProps> = ({
                />
              </div>
              <div>
-               <label className="block text-sm font-bold text-gray-600 mb-1">地址</label>
+               <label className="block text-sm font-bold text-gray-600 mb-1">地址 (英文)</label>
                <input 
                  type="text" 
                  value={tempHotel.address}
@@ -330,7 +344,58 @@ const TripInfo: React.FC<TripInfoProps> = ({
                  className="mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-[#FFDAC1] focus:ring-[#FFDAC1] border p-3 bg-gray-50"
                />
              </div>
+             <div>
+               <label className="block text-sm font-bold text-gray-600 mb-1">地址 (當地語言/原文)</label>
+               <input 
+                 type="text" 
+                 placeholder="例如: 東京都新宿区西新宿3-2-9"
+                 value={tempHotel.originalAddress || ''}
+                 onChange={(e) => setTempHotel({...tempHotel, originalAddress: e.target.value})}
+                 className="mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-[#FFDAC1] focus:ring-[#FFDAC1] border p-3 bg-gray-50"
+               />
+             </div>
              <div className="flex gap-2">
+                <div className="flex-1">
+                    <label className="block text-sm font-bold text-gray-600 mb-1">電話</label>
+                    <input 
+                        type="text" 
+                        value={tempHotel.phone || ''}
+                        onChange={(e) => setTempHotel({...tempHotel, phone: e.target.value})}
+                        className="mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-[#FFDAC1] focus:ring-[#FFDAC1] border p-3 bg-gray-50"
+                    />
+                </div>
+                <div className="flex-1">
+                    <label className="block text-sm font-bold text-gray-600 mb-1">訂房代碼</label>
+                    <input 
+                        type="text" 
+                        value={tempHotel.bookingRef}
+                        onChange={(e) => setTempHotel({...tempHotel, bookingRef: e.target.value})}
+                        className="mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-[#FFDAC1] focus:ring-[#FFDAC1] border p-3 bg-gray-50"
+                    />
+                </div>
+             </div>
+             <div className="flex gap-2">
+               <div className="flex-1">
+                  <label className="block text-sm font-bold text-gray-600 mb-1">入住時間</label>
+                  <input 
+                    type="text" 
+                    value={tempHotel.checkIn}
+                    onChange={(e) => setTempHotel({...tempHotel, checkIn: e.target.value})}
+                    className="mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-[#FFDAC1] focus:ring-[#FFDAC1] border p-3 bg-gray-50"
+                  />
+               </div>
+               <div className="flex-1">
+                  <label className="block text-sm font-bold text-gray-600 mb-1">退房時間</label>
+                  <input 
+                    type="text" 
+                    value={tempHotel.checkOut}
+                    onChange={(e) => setTempHotel({...tempHotel, checkOut: e.target.value})}
+                    className="mt-1 block w-full rounded-xl border-gray-200 shadow-sm focus:border-[#FFDAC1] focus:ring-[#FFDAC1] border p-3 bg-gray-50"
+                  />
+               </div>
+             </div>
+
+             <div className="flex gap-2 pt-2">
                 <button onClick={saveHotel} className="flex-1 bg-[#FFDAC1] text-[#8a6a54] py-3 rounded-xl font-bold hover:bg-[#ffcfb0] transition-colors">儲存</button>
                 <button onClick={() => setIsEditingHotel(false)} className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">取消</button>
              </div>
@@ -338,14 +403,23 @@ const TripInfo: React.FC<TripInfoProps> = ({
         ) : (
           <div className="p-6">
             <h3 className="text-xl font-black text-gray-800 mb-2 leading-tight">{hotel.name}</h3>
-            <p className="text-gray-500 mb-5 text-sm">{hotel.address}</p>
+            {hotel.originalAddress && <p className="text-gray-800 font-bold text-sm mb-1">{hotel.originalAddress}</p>}
+            <p className="text-gray-500 mb-4 text-sm">{hotel.address}</p>
             
-            <div className="flex justify-between text-sm text-gray-500 border-t border-dashed border-gray-200 pt-4 mb-5">
+            <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 border-t border-dashed border-gray-200 pt-4 mb-5">
+               <div>
+                 <span className="block font-bold text-gray-400 text-[10px] uppercase">Booking Ref</span>
+                 <span className="text-gray-800 font-bold">{hotel.bookingRef}</span>
+               </div>
+               <div>
+                 <span className="block font-bold text-gray-400 text-[10px] uppercase">Phone</span>
+                 <span className="text-gray-800 font-bold">{hotel.phone || '--'}</span>
+               </div>
                <div>
                  <span className="block font-bold text-gray-700 mb-1">入住</span>
                  <span className="bg-gray-100 px-2 py-1 rounded-md text-xs">{hotel.checkIn}</span>
                </div>
-               <div className="text-right">
+               <div>
                  <span className="block font-bold text-gray-700 mb-1">退房</span>
                  <span className="bg-gray-100 px-2 py-1 rounded-md text-xs">{hotel.checkOut}</span>
                </div>
@@ -356,7 +430,7 @@ const TripInfo: React.FC<TripInfoProps> = ({
               className="w-full bg-[#8a6a54] hover:bg-[#6d5341] text-[#FFDAC1] py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 font-bold"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              給司機看 (放大顯示)
+              給司機看
             </button>
           </div>
         )}
@@ -378,9 +452,13 @@ const TripInfo: React.FC<TripInfoProps> = ({
                
                <div className="w-full h-px bg-gray-200"></div>
 
+               {/* Priority to Original Address */}
                <div className="space-y-2">
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Address</p>
-                  <p className="text-xl font-bold text-gray-700 leading-relaxed">{hotel.address}</p>
+                  {hotel.originalAddress && (
+                     <p className="text-2xl font-black text-gray-900 leading-relaxed mb-2">{hotel.originalAddress}</p>
+                  )}
+                  <p className="text-md font-medium text-gray-500 leading-relaxed">{hotel.address}</p>
                </div>
              </div>
 
