@@ -103,7 +103,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ companions, expenses, o
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       
       {/* 1. Auto-updating Currency Converter - Macaroon Purple/Lavender */}
       <div className="bg-[#E2DBF5] rounded-3xl p-6 text-[#6a5a9e] shadow-sm border border-white/50">

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { FlightInfo, HotelInfo, Companion } from '../types';
-import { generateTaxiCard } from '../services/geminiService';
+import { predictFlightDetails } from '../services/geminiService';
 
 interface TripInfoProps {
-  flight: FlightInfo;
+  flights: FlightInfo[];
+  onUpdateFlights: (flights: FlightInfo[]) => void;
   hotel: HotelInfo;
   companions: Companion[];
   onUpdateHotel: (hotel: HotelInfo) => void;
@@ -12,27 +13,25 @@ interface TripInfoProps {
 }
 
 const TripInfo: React.FC<TripInfoProps> = ({ 
-  flight, 
+  flights, 
+  onUpdateFlights,
   hotel, 
   companions, 
   onUpdateHotel,
   onAddCompanion,
   onRemoveCompanion
 }) => {
-  const [taxiCard, setTaxiCard] = useState<string | null>(null);
-  const [isLoadingCard, setIsLoadingCard] = useState(false);
+  const [showTaxiCard, setShowTaxiCard] = useState(false);
   const [newCompanionName, setNewCompanionName] = useState('');
   const [isEditingHotel, setIsEditingHotel] = useState(false);
+  
+  // Flight Editing State
+  const [editingFlightId, setEditingFlightId] = useState<string | null>(null);
+  const [tempFlight, setTempFlight] = useState<FlightInfo | null>(null);
+  const [isPredictingFlight, setIsPredictingFlight] = useState(false);
 
   // Local state for editing form
   const [tempHotel, setTempHotel] = useState<HotelInfo>(hotel);
-
-  const handleGenerateCard = async () => {
-    setIsLoadingCard(true);
-    const cardContent = await generateTaxiCard(hotel);
-    setTaxiCard(cardContent);
-    setIsLoadingCard(false);
-  };
 
   const handleAddCompanion = () => {
     if (newCompanionName.trim()) {
@@ -46,45 +45,253 @@ const TripInfo: React.FC<TripInfoProps> = ({
     setIsEditingHotel(false);
   };
 
+  const startEditFlight = (flight: FlightInfo) => {
+    setTempFlight({...flight});
+    setEditingFlightId(flight.id);
+  };
+
+  const saveFlight = async () => {
+    if (tempFlight) {
+      let finalFlight = { ...tempFlight };
+
+      // Auto-fill origin/dest if missing and flight number exists
+      if (finalFlight.flightNumber && (!finalFlight.origin || !finalFlight.destination)) {
+        setIsPredictingFlight(true);
+        const prediction = await predictFlightDetails(finalFlight.flightNumber);
+        if (prediction) {
+          finalFlight.origin = finalFlight.origin || prediction.origin;
+          finalFlight.destination = finalFlight.destination || prediction.destination;
+        }
+        setIsPredictingFlight(false);
+      }
+
+      const updatedFlights = flights.map(f => f.id === tempFlight.id ? finalFlight : f);
+      onUpdateFlights(updatedFlights);
+      setEditingFlightId(null);
+      setTempFlight(null);
+    }
+  };
+
+  const deleteFlight = (id: string) => {
+    onUpdateFlights(flights.filter(f => f.id !== id));
+  };
+
+  const addNewFlight = () => {
+    const newId = Date.now().toString();
+    const newFlight: FlightInfo = {
+      id: newId,
+      type: flights.length === 0 ? 'departure' : 'other', 
+      flightNumber: '',
+      origin: '',
+      destination: '',
+      departureTime: '00:00',
+      arrivalTime: '00:00',
+      terminal: '',
+      date: '2025/01/01'
+    };
+    const updated = [...flights, newFlight];
+    onUpdateFlights(updated);
+    setTempFlight(newFlight);
+    setEditingFlightId(newId);
+  };
+
+  const getFlightLabel = (type: string) => {
+    switch (type) {
+      case 'departure': return '去程航班';
+      case 'return': return '回程航班';
+      default: return '轉機/其他航班';
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6">
       {/* Flight Section - Pastel Blue */}
       <div className="bg-white rounded-3xl shadow-sm border border-[#A0C4FF]/30 overflow-hidden">
-        <div className="bg-[#A0C4FF] px-6 py-4">
+        <div className="bg-[#A0C4FF] px-6 py-4 flex justify-between items-center">
           <h2 className="text-white text-lg font-bold flex items-center gap-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
             航班資訊
           </h2>
+          <button onClick={addNewFlight} className="text-white bg-white/20 hover:bg-white/30 p-1.5 rounded-lg text-sm font-bold flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            新增
+          </button>
         </div>
-        <div className="p-6 grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">航班號碼</p>
-            <p className="text-xl font-bold text-gray-700">{flight.flightNumber}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">日期</p>
-            <p className="text-lg font-medium text-gray-700">{flight.date}</p>
-          </div>
-          <div className="col-span-2 border-t border-gray-100 my-2 pt-4 flex justify-between items-center">
-            <div>
-              <p className="text-2xl font-black text-[#8bb4f7]">{flight.departureTime}</p>
-              <p className="text-xs text-gray-400 font-bold">出發</p>
-            </div>
-            <div className="flex-1 px-4 flex flex-col items-center">
-               <div className="w-full h-0.5 bg-gray-200 relative">
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-50 p-1">
-                    <svg className="w-4 h-4 text-[#A0C4FF] transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409 8.729 8.729 0 014.722-1.391 8.736 8.736 0 014.723 1.391 1 1 0 001.168-1.409l-7-14z" /></svg>
-                 </div>
-               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-black text-[#8bb4f7]">{flight.arrivalTime}</p>
-              <p className="text-xs text-gray-400 font-bold">抵達</p>
-            </div>
-          </div>
-          <div className="col-span-2 text-center bg-[#f0f7ff] py-2 rounded-xl mt-2">
-            <span className="text-[#8bb4f7] font-bold">航廈: {flight.terminal}</span>
-          </div>
+        
+        <div className="p-2 space-y-2">
+          {flights.length === 0 && (
+             <div className="text-center text-gray-400 py-6 text-sm">目前沒有航班資料</div>
+          )}
+
+          {flights.map((flight) => {
+            const isEditing = editingFlightId === flight.id;
+            
+            if (isEditing && tempFlight) {
+              return (
+                <div key={flight.id} className="bg-gray-50 p-4 rounded-2xl border border-[#A0C4FF] space-y-3 m-2 relative">
+                   {isPredictingFlight && (
+                     <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl">
+                       <span className="text-[#8bb4f7] font-bold text-sm animate-pulse">AI 分析航班中...</span>
+                     </div>
+                   )}
+                   <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-400">類型</label>
+                        <select 
+                          value={tempFlight.type}
+                          onChange={e => setTempFlight({...tempFlight, type: e.target.value as any})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        >
+                          <option value="departure">去程</option>
+                          <option value="return">回程</option>
+                          <option value="other">轉機/其他</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-400">日期</label>
+                        <input 
+                          type="text"
+                          placeholder="YYYY/MM/DD"
+                          value={tempFlight.date}
+                          onChange={e => setTempFlight({...tempFlight, date: e.target.value})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        />
+                      </div>
+                   </div>
+                   <div className="flex gap-2">
+                      <div className="flex-1">
+                         <label className="text-xs font-bold text-gray-400">班機代號</label>
+                         <input 
+                          type="text"
+                          placeholder="例如 JX800"
+                          value={tempFlight.flightNumber}
+                          onChange={e => setTempFlight({...tempFlight, flightNumber: e.target.value.toUpperCase()})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        />
+                      </div>
+                      <div className="w-1/3">
+                         <label className="text-xs font-bold text-gray-400">航廈</label>
+                         <input 
+                          type="text"
+                          value={tempFlight.terminal}
+                          onChange={e => setTempFlight({...tempFlight, terminal: e.target.value})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        />
+                      </div>
+                   </div>
+                   
+                   {/* Origin / Dest Inputs */}
+                   <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-400">出發地</label>
+                        <input 
+                          type="text"
+                          placeholder="(自動)"
+                          value={tempFlight.origin || ''}
+                          onChange={e => setTempFlight({...tempFlight, origin: e.target.value})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        />
+                      </div>
+                      <span className="text-gray-300 mb-2">→</span>
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-400">目的地</label>
+                        <input 
+                          type="text"
+                          placeholder="(自動)"
+                          value={tempFlight.destination || ''}
+                          onChange={e => setTempFlight({...tempFlight, destination: e.target.value})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                        />
+                      </div>
+                   </div>
+
+                   <div className="flex gap-2 items-center">
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-400">出發時間</label>
+                        <input 
+                          type="text"
+                          placeholder="HH:MM"
+                          value={tempFlight.departureTime}
+                          onChange={e => setTempFlight({...tempFlight, departureTime: e.target.value})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm font-bold text-[#8bb4f7]"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-400">抵達時間</label>
+                        <input 
+                          type="text"
+                          placeholder="HH:MM"
+                          value={tempFlight.arrivalTime}
+                          onChange={e => setTempFlight({...tempFlight, arrivalTime: e.target.value})}
+                          className="w-full p-2 rounded-lg border border-gray-200 text-sm font-bold text-[#8bb4f7]"
+                        />
+                      </div>
+                   </div>
+                   <div className="flex gap-2 pt-2">
+                     <button onClick={saveFlight} className="flex-1 bg-[#A0C4FF] text-white py-2 rounded-xl text-sm font-bold">儲存 (AI 自動補全)</button>
+                     <button onClick={() => {
+                         if(!flight.flightNumber && flight.departureTime === '00:00') {
+                           deleteFlight(flight.id); 
+                         } else {
+                           setEditingFlightId(null);
+                           setTempFlight(null);
+                         }
+                     }} className="flex-1 bg-gray-200 text-gray-600 py-2 rounded-xl text-sm font-bold">取消</button>
+                   </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={flight.id} className="bg-white rounded-2xl p-4 hover:bg-blue-50 transition-colors relative group border border-gray-100">
+                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => startEditFlight(flight)} className="p-1 text-[#8bb4f7] hover:bg-blue-100 rounded-md">
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button onClick={() => deleteFlight(flight.id)} className="p-1 text-red-300 hover:bg-red-50 rounded-md">
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider ${
+                    flight.type === 'departure' ? 'bg-[#A0C4FF] text-white' : 
+                    flight.type === 'return' ? 'bg-[#ffb7b2] text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {getFlightLabel(flight.type)}
+                  </span>
+                  <span className="text-xs font-bold text-gray-400">{flight.date}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-black text-gray-700">{flight.flightNumber}</span>
+                    {(flight.origin || flight.destination) && (
+                      <span className="text-xs text-gray-400 font-bold">{flight.origin} → {flight.destination}</span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                     <span className="text-xs text-gray-400 font-bold bg-gray-100 px-2 py-1 rounded-lg">航廈 {flight.terminal}</span>
+                  </div>
+                  <div className="col-span-2 flex justify-between items-center mt-1">
+                     <div>
+                       <p className="text-xl font-black text-[#8bb4f7]">{flight.departureTime}</p>
+                     </div>
+                     <div className="flex-1 px-3 flex flex-col items-center">
+                       <div className="w-full h-0.5 bg-gray-100 relative">
+                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1">
+                            <svg className="w-4 h-4 text-gray-300 transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409 8.729 8.729 0 014.722-1.391 8.736 8.736 0 014.723 1.391 1 1 0 001.168-1.409l-7-14z" /></svg>
+                         </div>
+                       </div>
+                     </div>
+                     <div>
+                       <p className="text-xl font-black text-[#8bb4f7]">{flight.arrivalTime}</p>
+                     </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -145,35 +352,41 @@ const TripInfo: React.FC<TripInfoProps> = ({
             </div>
 
             <button 
-              onClick={handleGenerateCard}
-              disabled={isLoadingCard}
+              onClick={() => setShowTaxiCard(true)}
               className="w-full bg-[#8a6a54] hover:bg-[#6d5341] text-[#FFDAC1] py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 font-bold"
             >
-              {isLoadingCard ? (
-                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#FFDAC1]"></span>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              )}
-              給司機看 (AI 產生卡片)
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+              給司機看 (放大顯示)
             </button>
           </div>
         )}
       </div>
 
-      {/* Taxi Card Modal */}
-      {taxiCard && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setTaxiCard(null)}>
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm max-h-[80vh] overflow-y-auto relative animate-fade-in shadow-2xl" onClick={e => e.stopPropagation()}>
-             <button onClick={() => setTaxiCard(null)} className="absolute top-5 right-5 text-gray-300 hover:text-gray-500">
-               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+      {/* Taxi Card Modal - Simple Display */}
+      {showTaxiCard && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-md" onClick={() => setShowTaxiCard(false)}>
+          <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 relative animate-fade-in shadow-2xl flex flex-col items-center justify-center min-h-[50vh]" onClick={e => e.stopPropagation()}>
+             <button onClick={() => setShowTaxiCard(false)} className="absolute top-6 right-6 text-gray-300 hover:text-gray-500 bg-gray-100 rounded-full p-2">
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
-             <div className="text-center mb-6">
-                <span className="bg-[#FFDAC1] text-[#8a6a54] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">Driver Card</span>
+             
+             <div className="text-center space-y-8 w-full">
+               <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Hotel Name</p>
+                  <h2 className="text-3xl font-black text-gray-900 leading-tight">{hotel.name}</h2>
+               </div>
+               
+               <div className="w-full h-px bg-gray-200"></div>
+
+               <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Address</p>
+                  <p className="text-xl font-bold text-gray-700 leading-relaxed">{hotel.address}</p>
+               </div>
              </div>
-             <div className="prose prose-lg text-gray-800 whitespace-pre-wrap leading-loose font-serif text-center text-xl">
-               {taxiCard}
+
+             <div className="mt-10 bg-[#FFDAC1] px-6 py-2 rounded-full text-[#8a6a54] text-xs font-bold">
+                Please take me here
              </div>
-             <p className="text-center text-gray-300 text-xs mt-8 font-medium">點擊背景關閉</p>
           </div>
         </div>
       )}

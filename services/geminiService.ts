@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { HotelInfo } from "../types";
+import { HotelInfo, FlightInfo } from "../types";
 
 const getAiClient = () => {
   const apiKey = process.env.API_KEY;
@@ -10,36 +10,90 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const generateTaxiCard = async (hotel: HotelInfo): Promise<string> => {
+// --- Trip Analysis ---
+
+export const predictFlightDetails = async (flightNumber: string): Promise<{ origin: string, destination: string } | null> => {
   const ai = getAiClient();
-  if (!ai) return "請先設定 API Key 才能使用智慧翻譯功能。";
+  if (!ai || !flightNumber) return null;
 
   try {
     const prompt = `
-      I am a traveler. Please generate a "Taxi Card" for the following hotel that I can show to a taxi driver.
-      
-      Hotel Name: ${hotel.name}
-      Address: ${hotel.address}
-      
-      Requirements:
-      1. Identify the likely language of the destination based on the address/name (e.g., Japanese for Tokyo, Thai for Bangkok).
-      2. Provide the text in that LOCAL language clearly and in large text format.
-      3. Also include the English name below it.
-      4. Add a polite phrase in the local language saying "Please take me to this address."
-      5. Keep it concise.
+      Identify the typical Origin and Destination airport codes (IATA) and City Names for flight number "${flightNumber}".
+      Return ONLY a JSON object like {"origin": "TPE (Taipei)", "destination": "NRT (Tokyo)"}.
+      If unknown, guess based on common routes or return null.
     `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
+      config: { responseMimeType: 'application/json' }
     });
 
-    return response.text || "無法產生翻譯，請稍後再試。";
+    return JSON.parse(response.text || "null");
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "發生錯誤，無法連線至 AI 服務。";
+    console.error("Flight Prediction Error:", error);
+    return null;
   }
 };
+
+export const getTripTitle = async (flights: FlightInfo[]): Promise<{ title: string, location: string } | null> => {
+  const ai = getAiClient();
+  if (!ai || flights.length === 0) return null;
+
+  try {
+    const flightSummary = flights.map(f => `${f.flightNumber} on ${f.date} to ${f.destination}`).join(', ');
+    const prompt = `
+      Analyze these flights: ${flightSummary}.
+      1. Determine the main destination city (e.g. Tokyo, Seoul, Paris).
+      2. determine the trip Month/Year (e.g. 2025/06).
+      
+      Return a JSON: { "title": "City Name Trip (YYYY/MM)", "location": "City Name, Country" }.
+      Example: { "title": "Japan Tokyo Trip (2025/06)", "location": "Tokyo, Japan" }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    return JSON.parse(response.text || "null");
+  } catch (error) {
+    return null;
+  }
+};
+
+// --- Weather ---
+
+export const getWeatherAdvice = async (location: string, dates: string): Promise<{ temp: string, advice: string } | null> => {
+  const ai = getAiClient();
+  if (!ai || !location) return null;
+
+  try {
+    const prompt = `
+      Predict the weather for: ${location} during: ${dates}.
+      
+      Return a JSON object:
+      {
+        "temp": "Average temperature range (e.g., 20°C - 25°C)",
+        "advice": "Short, cute clothing advice (max 30 words). E.g., 'Bring a light jacket for evenings!'"
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    return JSON.parse(response.text || "null");
+  } catch (error) {
+    console.error("Weather Error:", error);
+    return null;
+  }
+};
+
+// --- Other Services ---
 
 export const askTravelAssistant = async (query: string, context: string): Promise<string> => {
   const ai = getAiClient();
@@ -52,7 +106,7 @@ export const askTravelAssistant = async (query: string, context: string): Promis
       
       User Query: ${query}
       
-      Answer concisely and helpfully. If it involves currency, give rough estimates but warn they change.
+      Answer concisely and helpfully.
     `;
 
     const response = await ai.models.generateContent({
@@ -72,7 +126,6 @@ export const getExchangeRate = async (from: string, to: string): Promise<number 
   if (!ai) return null;
 
   try {
-    // Only fetch if valid currencies
     if (!from || !to || from.length < 3 || to.length < 3) return null;
 
     const prompt = `

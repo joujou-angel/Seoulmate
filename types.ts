@@ -5,7 +5,11 @@ export interface Companion {
 }
 
 export interface FlightInfo {
+  id: string;
+  type: 'departure' | 'return' | 'other';
   flightNumber: string;
+  origin?: string;      // e.g. TPE
+  destination?: string; // e.g. NRT
   departureTime: string;
   arrivalTime: string;
   terminal: string;
@@ -33,6 +37,7 @@ export interface Expense {
 export enum AppTab {
   TRIP = 'TRIP',
   EXPENSES = 'EXPENSES',
+  WEATHER = 'WEATHER',
   ASSISTANT = 'ASSISTANT'
 }
 
